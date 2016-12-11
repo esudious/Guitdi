@@ -169,7 +169,7 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
     }
 
     private void stopAllNotes(){
-        for(int i = 0; i<100;i++){
+        for(int i = 0; i<127;i++){
             byte[] buffer = new byte[32];
             int numBytes = 0;
             int channel = 3; // MIDI channels 1-16 are encoded as 0-15.
@@ -275,7 +275,7 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
                 changeButtonColors(++basePosition);
             }
         }*///test tilt to change notes
-        
+        int oldPosition = basePosition;
 
         double absY = Math.abs(yAccel);
         //center spot
@@ -294,7 +294,10 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         if (yAccel < -6){
             basePosition = 0;
         }
-        changeButtonColors(basePosition);
+        if (oldPosition!=basePosition) {
+            changeButtonColors(basePosition);
+            if (inputPort!=null) stopAllNotes();
+        }
         //trackPosition(xAccel, yAccel, zAccel, vector);
 
         //Log.d("Sensor Changed", String.format("x = %8.6f,  y = %8.6f,  z = %8.6f, v= %8.6f",
@@ -349,14 +352,6 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         return letter;
     }
 
-
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -390,6 +385,11 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
             stopNote(buttonNumber+lowestNote);
         }
         return false;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
 }
