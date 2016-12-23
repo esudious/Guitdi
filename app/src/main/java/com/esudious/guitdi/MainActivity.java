@@ -1,6 +1,7 @@
 package com.esudious.guitdi;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Intent;
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     Spinner spinner;
     int portNumber;
     MidiManager midiManager;
+    BluetoothManager bluetoothManager;
     BluetoothLeScanner bluetoothScanner;
     ScanCallback scanCallback;
 
@@ -35,7 +37,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
         midiManager = (MidiManager) getSystemService(MIDI_SERVICE);
-
         MidiDeviceInfo[] info = midiManager.getDevices();
 
 

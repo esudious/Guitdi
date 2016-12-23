@@ -22,9 +22,6 @@
             android:screenOrientation="portrait">
 
         </activity>
-        <activity android:name=".GridActivity">
-
-        </activity>
 
         <uses-feature android:name="android.software.midi" android:required="true"/>
 

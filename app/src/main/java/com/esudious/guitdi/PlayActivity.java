@@ -5,6 +5,7 @@ import android.graphics.Point;
 import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
 import android.media.midi.MidiInputPort;
+import android.media.midi.MidiReceiver;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,7 +32,9 @@ import android.widget.LinearLayout;
 /**
  * Created by Jeremy on 11/8/2015.
  */
-public class PlayActivity extends Activity implements SensorEventListener, Button.OnClickListener, View.OnTouchListener {
+public class PlayActivity extends Activity
+        implements SensorEventListener, Button.OnClickListener,
+        View.OnTouchListener, MidiManager.OnDeviceOpenedListener{
 
     MidiManager midiManager;
     private SensorManager mSensorManager;
@@ -52,7 +55,7 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
     double xAccel, yAccel, zAccel, sumOfAccel;
     double vector, speed;
 
-    MidiInputPort inputPort;
+    MidiReceiver inputPort;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,28 +97,8 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         tilt = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         //MIDI STUFF
-        portNumber = getIntent().getIntExtra("portNumber", 0);
-        midiManager  = (MidiManager) getSystemService(Context.MIDI_SERVICE);
-        MidiDeviceInfo[] info = midiManager.getDevices();
-        Handler handler = new Handler(Looper.getMainLooper());
 
-
-        midiManager.openDevice(info[portNumber], new MidiManager.OnDeviceOpenedListener() {
-                    @Override
-                    public void onDeviceOpened(MidiDevice device) {
-                        if (device == null) {
-                            Log.e("Midi Error", "could not open device ");
-                        } else {
-                            inputPort = device.openInputPort(0);
-                        }
-                    }
-
-                }, handler
-        );
-
-        MidiManager.DeviceCallback callback = new MidiManager.DeviceCallback();
-
-        midiManager.registerDeviceCallback(callback, handler);
+        //END MIDI STUFF
 
         fillButtonList();
         fillNoteColors();
@@ -146,8 +129,8 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         int offset = 0;
         try {
             inputPort.send(buffer, offset, numBytes);
-        } catch (IOException ex){
-            //do nothing
+        } catch (Exception ex){
+            openDevice();
         }
 
     }
@@ -163,8 +146,8 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         int offset = 0;
         try {
             inputPort.send(buffer, offset, numBytes);
-        } catch (IOException ex){
-            //do nothing
+        } catch (Exception ex){
+            openDevice();
         }
     }
 
@@ -179,8 +162,8 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
             int offset = 0;
             try {
                 inputPort.send(buffer, offset, numBytes);
-            } catch (IOException ex){
-                //do nothing
+            } catch (Exception ex){
+                openDevice();
             }
         }
     }
@@ -357,11 +340,45 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
         super.onResume();
         mSensorManager.registerListener(this, tilt,
                 (int) sensorDelay);
+        portNumber = getIntent().getIntExtra("portNumber", 0);
+        midiManager  = (MidiManager) getSystemService(Context.MIDI_SERVICE);
+        MidiDeviceInfo[] info = midiManager.getDevices();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+
+        midiManager.openDevice(info[portNumber], this, handler);
+
+        MidiManager.DeviceCallback callback = new MidiManager.DeviceCallback();
+
+        midiManager.registerDeviceCallback(callback, handler);
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onStart();
+        mSensorManager.registerListener(this, tilt,
+                (int) sensorDelay);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mSensorManager.registerListener(this, tilt,
+                (int) sensorDelay);
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        mSensorManager.unregisterListener(this);
+        stopAllNotes();
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
         mSensorManager.unregisterListener(this);
         stopAllNotes();
 
@@ -388,8 +405,21 @@ public class PlayActivity extends Activity implements SensorEventListener, Butto
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
+    public void openDevice(){
+        portNumber = getIntent().getIntExtra("portNumber", 0);
+        MidiDeviceInfo[] info = midiManager.getDevices();
+        Handler handler = new Handler(Looper.getMainLooper());
+        midiManager.openDevice(info[portNumber], this, handler);
     }
 
+    @Override
+    public void onDeviceOpened(MidiDevice device) {
+        if (device == null) {
+            Log.e("Midi Error", "could not open device ");
+        } else {
+            inputPort = device.openInputPort(portNumber);
+        }
+    }
 }
